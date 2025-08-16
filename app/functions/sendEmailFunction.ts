@@ -1,4 +1,4 @@
-import { API_ENDPOINTS } from '../config/apiPrefix';
+import { API_ENDPOINTS } from '../config/apiPrefix/apiPrefix';
 
 export interface SendEmailRequest {
   to: string;
