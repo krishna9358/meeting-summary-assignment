@@ -1,5 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
+import { summarizeTranscript } from "./functions/summarizeFunction";
+import { sendEmail } from "./functions/sendEmailFunction";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("Summarize in bullet points for executives.");
@@ -10,7 +12,6 @@ export default function Home() {
   const [emailError, setEmailError] = useState("");
   const [activeStep, setActiveStep] = useState(1);
   const fileRef = useRef<HTMLInputElement>(null);
-  const FROM_EMAIL = process.env.FROM_EMAIL;
 
   // Email validation function
   const validateEmails = (emailString: string): { isValid: boolean; message: string } => {
@@ -44,14 +45,14 @@ export default function Home() {
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/summarize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: transcriptText, prompt }),
-      });
-      const data = await res.json();
-      setSummary(data.summary || "");
-      setActiveStep(2); // Auto-advance to step 2
+      const result = await summarizeTranscript(transcriptText, prompt);
+      
+      if (result.error) {
+        alert(result.error);
+      } else {
+        setSummary(result.summary || "");
+        setActiveStep(2); // Auto-advance to step 2
+      }
     } catch (e) {
       console.error(e);
       alert("Error generating summary");
@@ -60,7 +61,7 @@ export default function Home() {
     }
   }
 
-  async function sendEmail() {
+  async function handleSendEmail() {
     if (!summary.trim()) {
       alert("No summary to send.");
       return;
@@ -71,16 +72,15 @@ export default function Home() {
       return;
     }
     setEmailError("");
+    
     try {
-      const res = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: emailTo, subject: "Meeting Summary", body: summary, from:FROM_EMAIL}),
-      });
-      console.log("from email from page.tsx", FROM_EMAIL);
-      const data = await res.json();
-      if (res.ok) alert("Email sent ✔");
-      else alert(data.error || "Failed to send email");
+      const result = await sendEmail(emailTo, "Meeting Summary", summary);
+      
+      if (result.error) {
+        alert(result.error);
+      } else {
+        alert("Email sent ✔");
+      }
     } catch (e) {
       console.error(e);
       alert("Error sending email");
@@ -302,7 +302,7 @@ export default function Home() {
                   Back to Review
                 </button>
                 <button
-                  onClick={sendEmail}
+                  onClick={handleSendEmail}
                   disabled={!summary.trim() || !emailTo.trim()}
                   className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-all"
                 >
