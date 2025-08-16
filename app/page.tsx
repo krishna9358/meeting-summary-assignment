@@ -8,6 +8,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [activeStep, setActiveStep] = useState(1);
   const fileRef = useRef<HTMLInputElement>(null);
   const FROM_EMAIL = process.env.FROM_EMAIL;
 
@@ -50,6 +51,7 @@ export default function Home() {
       });
       const data = await res.json();
       setSummary(data.summary || "");
+      setActiveStep(2); // Auto-advance to step 2
     } catch (e) {
       console.error(e);
       alert("Error generating summary");
@@ -85,126 +87,197 @@ export default function Home() {
     }
   }
 
+  const resetAll = () => {
+    setTranscriptText(""); 
+    setSummary(""); 
+    setPrompt("Summarize in bullet points for executives."); 
+    setEmailTo(""); 
+    setEmailError("");
+    setActiveStep(1);
+    if(fileRef.current) fileRef.current.value="";
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 ">
-      <div className=" mx-auto p-8">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">
-            AI Meeting Notes Summarizer
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            AI Meeting Summarizer
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Transform your meeting transcripts into actionable insights with AI-powered summarization
+          <p className="text-gray-600">
+            Transform meeting transcripts into actionable insights
           </p>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Left Column - Input */}
-          <div className="space-y-6">
-            {/* Transcript Upload */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <label className="block text-lg font-semibold text-gray-700 mb-4">
-                Meeting Transcript
-              </label>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 transition-colors">
-                  <input 
-                    ref={fileRef} 
-                    type="file" 
-                    accept=".txt,text/plain" 
-                    onChange={handleFile}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        {/* Progress Steps */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center space-x-4">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold cursor-pointer transition-all ${
+                    activeStep >= step
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                  onClick={() => setActiveStep(step)}
+                >
+                  {step}
+                </div>
+                {step < 3 && (
+                  <div className={`w-12 h-0.5 ${activeStep > step ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Step Labels */}
+        <div className="flex justify-center mb-8">
+          <div className="flex space-x-16 text-sm text-gray-600">
+            <span className={activeStep === 1 ? 'text-blue-600 font-semibold' : ''}>Input</span>
+            <span className={activeStep === 2 ? 'text-blue-600 font-semibold' : ''}>Review</span>
+            <span className={activeStep === 3 ? 'text-blue-600 font-semibold' : ''}>Share</span>
+          </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Step 1: Input */}
+          {activeStep === 1 && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload or Paste Transcript</h2>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* File Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                    <input 
+                      ref={fileRef} 
+                      type="file" 
+                      accept=".txt,text/plain" 
+                      onChange={handleFile}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Custom Instructions */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
+                  <input
+                    type="text"
+                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="How to format the summary..."
                   />
                 </div>
+              </div>
+
+              {/* Text Area */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Or paste transcript</label>
                 <textarea
-                  className="w-full border-2 border-gray-200 rounded-lg p-4 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
+                  className="w-full border border-gray-300 rounded-lg p-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                   rows={8}
                   value={transcriptText}
                   onChange={(e) => setTranscriptText(e.target.value)}
-                  placeholder="Or paste your meeting transcript here..."
+                  placeholder="Paste your meeting transcript here..."
                 />
               </div>
-            </div>
 
-            {/* Custom Instruction */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <label className="block text-lg font-semibold text-gray-700 mb-4">
-                Custom Instructions
-              </label>
-              <input
-                type="text"
-                className="w-full border-2 border-gray-200 rounded-lg p-4 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="How would you like the summary formatted?"
-              />
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={generateSummary}
+                  disabled={loading || !transcriptText.trim()}
+                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </span>
+                  ) : (
+                    "Generate Summary"
+                  )}
+                </button>
+                <button
+                  onClick={resetAll}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
+          )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={generateSummary}
-                disabled={loading}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Generating...
-                  </span>
-                ) : (
-                  "✨ Generate Summary"
-                )}
-              </button>
-              <button
-                onClick={() => { 
-                  setTranscriptText(""); 
-                  setSummary(""); 
-                  setPrompt("Summarize in bullet points for executives."); 
-                  setEmailTo(""); 
-                  setEmailError("");
-                  if(fileRef.current) fileRef.current.value=""; 
-                }}
-                className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-
-          {/* Right Column - Output */}
-          <div className="space-y-6">
-            {/* Generated Summary */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <label className="block text-lg font-semibold text-gray-700 mb-4">
-                Generated Summary
-              </label>
+          {/* Step 2: Review Summary */}
+          {activeStep === 2 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-800">Review & Edit Summary</h2>
+                <button
+                  onClick={() => setActiveStep(3)}
+                  disabled={!summary.trim()}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-all"
+                >
+                  Continue to Share
+                </button>
+              </div>
+              
               <textarea
-                className="w-full border-2 border-gray-200 rounded-lg p-4 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all resize-none"
+                className="w-full border border-gray-300 rounded-lg p-4 focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
                 rows={12}
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder="Your AI-generated summary will appear here..."
               />
-            </div>
 
-            {/* Email Sharing */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <label className="block text-lg font-semibold text-gray-700 mb-4">
-                Share via Email
-              </label>
-              <div className="space-y-4">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setActiveStep(1)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Back to Input
+                </button>
+                <button
+                  onClick={generateSummary}
+                  disabled={loading}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all"
+                >
+                  Regenerate
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Share */}
+          {activeStep === 3 && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-800">Share Summary</h2>
+              
+              <div className="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+                <p className="text-sm text-gray-600 mb-2">Summary Preview:</p>
+                <div className="text-sm whitespace-pre-wrap">{summary}</div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Recipients</label>
                 <input
                   type="text"
-                  className={`w-full border-2 rounded-lg p-4 transition-all ${
+                  className={`w-full border rounded-lg p-3 transition-all ${
                     emailError 
                       ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-200' 
-                      : 'border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200'
+                      : 'border-gray-300 focus:border-green-500 focus:ring-2 focus:ring-green-200'
                   }`}
-                  placeholder="Enter recipient emails (comma separated)"
+                  placeholder="Enter emails (comma separated)"
                   value={emailTo}
                   onChange={(e) => {
                     setEmailTo(e.target.value);
@@ -212,23 +285,38 @@ export default function Home() {
                   }}
                 />
                 {emailError && (
-                  <div className="flex items-center text-red-600 text-sm">
+                  <div className="flex items-center text-red-600 text-sm mt-2">
                     <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     {emailError}
                   </div>
                 )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setActiveStep(2)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-all"
+                >
+                  Back to Review
+                </button>
                 <button
                   onClick={sendEmail}
-                  disabled={!summary.trim()}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                  disabled={!summary.trim() || !emailTo.trim()}
+                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-all"
                 >
                   Send Email
                 </button>
+                <button
+                  onClick={resetAll}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-all"
+                >
+                  Start Over
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </main>
