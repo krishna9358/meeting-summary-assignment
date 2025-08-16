@@ -7,9 +7,10 @@ export default function Home() {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailTo, setEmailTo] = useState("");
-  const fileRef = useRef(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const FROM_EMAIL = process.env.FROM_EMAIL;
 
-  async function handleFile(e) {
+  async function handleFile(e:any) {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
@@ -51,8 +52,9 @@ export default function Home() {
       const res = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: emailTo, subject: "Meeting Summary", body: summary }),
+        body: JSON.stringify({ to: emailTo, subject: "Meeting Summary", body: summary, from:FROM_EMAIL}),
       });
+      console.log("from email from page.tsx", FROM_EMAIL);
       const data = await res.json();
       if (res.ok) alert("Email sent ✔");
       else alert(data.error || "Failed to send email");
