@@ -12,9 +12,9 @@ export async function POST(req: Request) {
     }
 
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
+      model: 'openai/gpt-oss-120b',
       messages: [
-        { role: 'system', content: 'You are an assistant that summarizes meeting transcripts into clear, structured notes.' },
+        { role: 'system', content: 'You are an assistant that summarizes meeting transcripts into clear, structured notes. You will make it pretty. Add the date and other necessary info. To make it pretty use dash symbols.  ' },
         { role: 'user', content: `Instruction: ${prompt}\n\nTranscript:\n${transcript}` },
       ],
       temperature: 0.2,
